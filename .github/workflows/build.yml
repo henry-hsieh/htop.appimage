@@ -1,0 +1,113 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Commit lint
+        uses: wagoid/commitlint-github-action@v6
+
+      - name: Build appimage
+        id: build_appimage
+        run: make -j
+
+      - name: Upload artifacts
+        if: steps.build_appimage.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: htop
+          path: build/Htop-x86_64.AppImage
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        distro: ["ubuntu:xenial", "ubuntu:bionic", "ubuntu:focal", "ubuntu:latest", "centos:7", "centos:8", "centos:latest", "debian:latest", "fedora:latest", "archlinux:latest"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: htop
+          path: build/
+
+      - name: Add execution flag
+        run: chmod +x build/Htop-x86_64.AppImage
+
+      - name: Pull Docker image
+        run: docker pull ${{ matrix.distro }}
+
+      - name: Test in Docker container
+        run: docker run --rm -v $(pwd):$(pwd) -w $(pwd) ${{ matrix.distro }} ./scripts/test_htop.sh build/Htop-x86_64.AppImage $(cat packages/htop.yaml | grep version | sed 's/.\+:\s//g')
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
+
+    steps:
+      - name: Get token
+        uses: actions/create-github-app-token@v1
+        id: get_token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+
+      - name: Create release
+        id: create_release
+        uses: google-github-actions/release-please-action@v4
+        with:
+          token: ${{ steps.get_token.outputs.token }}
+          release-type: simple
+
+      - name: Checkout repository
+        if: ${{ steps.create_release.outputs.prs_created }}
+        uses: actions/checkout@v4
+
+      - name: Extract PR number
+        if: ${{ steps.create_release.outputs.prs_created }}
+        id: pr_number
+        uses: mikefarah/yq@master
+        with:
+          cmd: echo $PR_JSON | yq -r ".number"
+        env:
+          PR_JSON: ${{ steps.create_release.outputs.pr }}
+
+      - name: Enable auto-merge
+        if: ${{ steps.pr_number.outputs.result != 'null' }}
+        run: gh pr merge --auto --squash ${{ steps.pr_number.outputs.result }}
+        env:
+          GITHUB_TOKEN: ${{ steps.get_token.outputs.token }}
+
+      - name: Download artifact
+        id: download_release_artifact
+        if: ${{ steps.create_release.outputs.release_created }}
+        uses: actions/download-artifact@v4
+        with:
+          name: htop
+          path: build/
+
+      - name: Upload release artifact
+        if: steps.download_release_artifact.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ steps.get_token.outputs.token }}
+        run: gh release upload ${{ steps.create_release.outputs.tag_name }} build/Htop-x86_64.AppImage

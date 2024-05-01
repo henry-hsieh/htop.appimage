@@ -1,0 +1,103 @@
+{
+    automerge: true,
+    extends: ["config:recommended", ":dependencyDashboard"],
+    platformAutomerge: true,
+    automergeType: "pr",
+    commitMessagePrefix: "chore({{depName}}):",
+    commitMessageAction: "bump",
+    commitMessageTopic: "{{depName}} version",
+    separateMajorMinor: false,
+    prHourlyLimit: 0,
+    prConcurrentLimit: 0,
+    branchConcurrentLimit: 0,
+    rebaseWhen: "behind-base-branch",
+    enabledManagers: [
+        "custom.regex",
+    ],
+    customManagers: [
+        {
+            fileMatch: ["^packages/htop.yaml$"],
+            matchStringsStrategy: "combination",
+            matchStrings: [
+                "name:\\s(?<depName>.*?)\\n",
+                "version:\\s(?<currentValue>.*?)\\n",
+            ],
+            datasourceTemplate: "github-releases",
+            versioningTemplate: "semver",
+            packageNameTemplate: "htop-dev/htop",
+        },
+        {
+            fileMatch: ["^packages/ncurses.yaml$"],
+            matchStringsStrategy: "combination",
+            matchStrings: [
+                "name:\\s(?<depName>.*?)\\n",
+                "version:\\s(?<currentValue>.*?)\\n",
+            ],
+            datasourceTemplate: "custom.html",
+            registryUrlTemplate: "https://invisible-mirror.net/archives/ncurses/",
+            versioningTemplate: "semver-coerced",
+            extractVersionTemplate: "^ncurses-(?<version>.*?)\\.tar\\.gz$",
+        },
+        {
+            fileMatch: ["^packages/sensors.yaml$"],
+            matchStringsStrategy: "combination",
+            matchStrings: [
+                "name:\\s(?<depName>.*?)\\n",
+                "version:\\s(?<currentValue>.*?)\\n",
+            ],
+            datasourceTemplate: "github-tags",
+            versioningTemplate: "regex:^(?<major>\\d+)-(?<minor>\\d+)-(?<patch>\\d+)$",
+            packageNameTemplate: "lm-sensors/lm-sensors",
+            extractVersionTemplate: "^V(?<version>.*?)$",
+        },
+        {
+            fileMatch: ["^packages/libcap.yaml$"],
+            matchStringsStrategy: "combination",
+            matchStrings: [
+                "name:\\s(?<depName>.*?)\\n",
+                "version:\\s(?<currentValue>.*?)\\n",
+            ],
+            datasourceTemplate: "custom.html",
+            registryUrlTemplate: "https://git.kernel.org/pub/scm/libs/libcap/libcap.git/refs/",
+            versioningTemplate: "semver",
+            extractVersionTemplate: "/libcap-(?<version>.*?)\\.tar\\.gz$",
+        },
+        {
+            fileMatch: ["^packages/hwloc.yaml$"],
+            matchStringsStrategy: "combination",
+            matchStrings: [
+                "name:\\s(?<depName>.*?)\\n",
+                "version:\\s(?<currentValue>.*?)\\n",
+            ],
+            datasourceTemplate: "github-tags",
+            packageNameTemplate: "open-mpi/hwloc",
+            versioningTemplate: "semver",
+            extractVersionTemplate: "^hwloc-(?<version>.*?)$",
+        },
+        {
+            fileMatch: ["^packages/libnl.yaml$"],
+            matchStringsStrategy: "combination",
+            matchStrings: [
+                "name:\\s(?<depName>.*?)\\n",
+                "version:\\s(?<currentValue>.*?)\\n",
+            ],
+            datasourceTemplate: "custom.html",
+            registryUrlTemplate: "https://www.infradead.org/~tgr/libnl/files/",
+            versioningTemplate: "semver",
+            extractVersionTemplate: "^libnl-(?<version>.*?)\\.tar\\.gz$",
+        },
+    ],
+    customDatasources: {
+        html: {
+            format: "html",
+        },
+    },
+    packageRules: [
+        {
+            matchDepNames: ["htop"],
+            commitMessagePrefix: "feat({{depName}}):",
+            commitMessageAction: "update",
+            commitBody: "Release-As: {{newVersion}}",
+        },
+    ],
+}
