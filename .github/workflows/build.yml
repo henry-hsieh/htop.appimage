@@ -29,7 +29,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: htop
-          path: build/Htop-x86_64.AppImage
+          path: |
+            build/Htop-x86_64.AppImage
+            build/AppDir/usr/share/man/man1/htop.1
 
   test:
     name: Test
@@ -110,4 +112,6 @@ jobs:
         if: steps.download_release_artifact.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ steps.get_token.outputs.token }}
-        run: gh release upload ${{ steps.create_release.outputs.tag_name }} build/Htop-x86_64.AppImage
+        run: |
+          gh release upload ${{ steps.create_release.outputs.tag_name }} build/Htop-x86_64.AppImage
+          gh release upload ${{ steps.create_release.outputs.tag_name }} build/AppDir/usr/share/man/man1/htop.1
