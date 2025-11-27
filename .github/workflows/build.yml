@@ -85,20 +85,20 @@ jobs:
         if: ${{ steps.create_release.outputs.prs_created }}
         uses: actions/checkout@v4
 
-      - name: Extract PR number
-        if: ${{ steps.create_release.outputs.prs_created }}
-        id: pr_number
-        uses: mikefarah/yq@master
-        with:
-          cmd: echo $PR_JSON | yq -r ".number"
-        env:
-          PR_JSON: ${{ steps.create_release.outputs.pr }}
-
-      - name: Enable auto-merge
-        if: ${{ steps.pr_number.outputs.result != 'null' }}
-        run: gh pr merge --auto --squash ${{ steps.pr_number.outputs.result }}
+      - name: Create release
+        id: create_release
         env:
           GITHUB_TOKEN: ${{ steps.get_token.outputs.token }}
+        run: |
+          release=$(git log --format=%B $GITHUB_SHA -1 | grep "Release-As" | head -n 1 | sed 's/Release-As: //g')
+          if [[ "$release" != "" ]]; then
+            echo "release_created=true" >> $GITHUB_OUTPUT
+            echo "tag_name=v$release" >> $GITHUB_OUTPUT
+            gh release create v$release -t "v$release"
+          else
+            echo "release_created=false" >> $GITHUB_OUTPUT
+            echo "tag_name=null" >> $GITHUB_OUTPUT
+          fi
 
       - name: Download artifact
         id: download_release_artifact
