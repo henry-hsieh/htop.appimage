@@ -3,6 +3,7 @@ build_dir ?= $(CURDIR)/build
 appimage_dir ?= $(build_dir)/AppDir
 install_prefix := $(appimage_dir)/usr
 packages_dir ?= $(CURDIR)/packages
+scripts_dir ?= $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 htop_ver := $(shell cat $(packages_dir)/htop.yaml | grep version | sed 's/.\+:\s//g')
 ncurses_ver := $(shell cat $(packages_dir)/ncurses.yaml | grep version | sed 's/.\+:\s//g')
 sensors_ver := $(shell cat $(packages_dir)/sensors.yaml | grep version | sed 's/.\+:\s//g')
@@ -21,7 +22,11 @@ $(appimage_dir)/usr/bin/htop: $(build_dir)/htop-$(htop_ver)/htop
 
 $(build_dir)/htop-$(htop_ver)/htop: $(runtime_libs_src) | $(build_dir)/htop-$(htop_ver).tar.xz
 	@cd $(build_dir)/htop-$(htop_ver); \
-		export LD_LIBRARY_PATH="$(build_dir)/deps/lib:${LD_LIBRARY_PATH}"; \
+		$(scripts_dir)/patch.sh htop $(htop_ver) $(build_dir); \
+		export LD_LIBRARY_PATH="$(build_dir)/deps/lib:$${LD_LIBRARY_PATH}"; \
+		export PKG_CONFIG_PATH="$(build_dir)/deps/lib/pkgconfig:$${PKG_CONFIG_PATH}" \
+		export PKG_CONFIG="pkg-config"; \
+		GIT_CEILING_DIRECTORIES=$(build_dir) \
 		./autogen.sh; \
 		CFLAGS="           $(shell PKG_CONFIG_PATH=$(build_dir)/deps/lib/pkgconfig/ pkg-config --cflags $(build_dir)/deps/lib/pkgconfig/ncursesw.pc      )  \
 		                   $(shell PKG_CONFIG_PATH=$(build_dir)/deps/lib/pkgconfig/ pkg-config --cflags $(build_dir)/deps/lib/pkgconfig/libcap.pc        )" \
@@ -44,7 +49,7 @@ $(appimage_dir)/usr/share/terminfo: $(build_dir)/deps/lib/libncursesw.so
 $(build_dir)/deps/lib/libncursesw.so: | $(build_dir)/ncurses-$(ncurses_ver).tar.gz $(build_dir)/deps
 	@cd $(build_dir)/ncurses-$(ncurses_ver); \
 		./configure --prefix=$(build_dir)/deps --with-shared --without-normal --without-debug --with-termlib \
-		--with-pkg-config=$(build_dir)/deps/lib/pkgconfig/ --with-pkg-config-libdir=$(build_dir)/deps/lib \
+		--with-pkg-config --with-pkg-config-libdir=$(build_dir)/deps/lib/pkgconfig/ \
 		--enable-widec --enable-ext-colors --enable-ext-mouse --enable-bsdpad --enable-opaque-curses --enable-pc-files --enable-symlinks; \
 		$(MAKE); \
 		$(MAKE) install.includes; \
