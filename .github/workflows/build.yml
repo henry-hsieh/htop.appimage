@@ -74,15 +74,7 @@ jobs:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
 
-      - name: Create release
-        id: create_release
-        uses: google-github-actions/release-please-action@v4
-        with:
-          token: ${{ steps.get_token.outputs.token }}
-          release-type: simple
-
       - name: Checkout repository
-        if: ${{ steps.create_release.outputs.prs_created }}
         uses: actions/checkout@v4
 
       - name: Create release
@@ -102,7 +94,7 @@ jobs:
 
       - name: Download artifact
         id: download_release_artifact
-        if: ${{ steps.create_release.outputs.release_created }}
+        if: ${{ steps.create_release.outputs.release_created == 'true' }}
         uses: actions/download-artifact@v4
         with:
           name: htop
