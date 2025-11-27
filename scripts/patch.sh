@@ -22,3 +22,7 @@ fi
 if [[ "$package" == "htop" ]] && [[ "$version" == "3.4.0" ]] ; then
   patch -p1 -i $scripts_dir/patch/htop-3.4.0.patch
 fi
+
+if [[ "$package" == "htop" ]] && [[ "$version" == "3.4.1" ]] ; then
+  patch -p1 -i $scripts_dir/patch/htop-3.4.1.patch
+fi
