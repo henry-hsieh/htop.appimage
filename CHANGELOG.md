@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.0](https://github.com/henry-hsieh/htop.appimage/compare/v3.3.0...v3.4.0) (2025-11-27)
+
+
+### Features
+
+* **htop:** update htop version to v3.4.0 ([#26](https://github.com/henry-hsieh/htop.appimage/issues/26)) ([832ddd8](https://github.com/henry-hsieh/htop.appimage/commit/832ddd857f7241c20575f0356075e0582c92039c))
+
 ## [3.3.0](https://github.com/henry-hsieh/htop.appimage/compare/v3.3.0...v3.3.0) (2024-05-30)
 
 
