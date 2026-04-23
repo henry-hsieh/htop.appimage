@@ -59,7 +59,7 @@ $(build_dir)/deps/lib/libtinfow.so: $(build_dir)/deps/lib/libncursesw.so
 
 $(build_dir)/deps/lib/libsensors.so: | $(build_dir)/lm-sensors-$(sensors_ver).tar.gz $(build_dir)/deps
 	@cd $(build_dir)/lm-sensors-$(sensors_ver); \
-		$(MAKE); \
+		$(MAKE) CFLAGS=-std=gnu99; \
 		$(MAKE) install PREFIX=$(build_dir)/deps ETCDIR=$(build_dir)/deps/etc
 
 $(build_dir)/deps/lib/libcap.so: | $(build_dir)/libcap-$(libcap_ver).tar.gz $(build_dir)/deps
